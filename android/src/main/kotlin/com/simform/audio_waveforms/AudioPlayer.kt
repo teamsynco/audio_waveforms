@@ -201,7 +201,7 @@ class AudioPlayer(
                     }
                 }
             }
-
+            result.success(null)
         } catch (e: Exception) {
             result.error(Constants.LOG_TAG, "Can not set the release mode", e.toString())
         }
