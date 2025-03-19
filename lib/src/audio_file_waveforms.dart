@@ -124,8 +124,8 @@ class _AudioFileWaveformsState extends State<AudioFileWaveforms>
   late Duration? animationDuration;
   late Curve? animationCurve;
   late Clip? clipBehavior;
-  late StreamSubscription<int> onCurrentDurationSubscription;
-  late StreamSubscription<void> onCompletionSubscription;
+  StreamSubscription<int>? onCurrentDurationSubscription;
+  StreamSubscription<void>? onCompletionSubscription;
   StreamSubscription<List<double>>? onCurrentExtractedWaveformData;
 
   double get spacing => widget.playerWaveStyle.spacing;
@@ -153,16 +153,7 @@ class _AudioFileWaveformsState extends State<AudioFileWaveforms>
     _growingWaveController
       ..forward()
       ..addListener(_updateGrowAnimationProgress);
-    onCurrentDurationSubscription =
-        playerController.onCurrentDurationChanged.listen((event) {
-      _seekProgress.value = event;
-      _updatePlayerPercent();
-    });
 
-    onCompletionSubscription = playerController.onCompletion.listen((event) {
-      _seekProgress.value = playerController.maxDuration;
-      _updatePlayerPercent();
-    });
     if (widget.waveformData.isNotEmpty) {
       _addWaveformData(widget.waveformData);
     } else {
@@ -177,13 +168,28 @@ class _AudioFileWaveformsState extends State<AudioFileWaveforms>
             .listen(_addWaveformData);
       }
     }
+
+    playerController.getDuration(DurationType.current).then((currentDurationMs) {
+      _seekProgress.value = currentDurationMs;
+      _updatePlayerPercent();
+
+      onCurrentDurationSubscription = playerController.onCurrentDurationChanged.listen((event) {
+        _seekProgress.value = event;
+        _updatePlayerPercent();
+      });
+
+      onCompletionSubscription = playerController.onCompletion.listen((event) {
+        _seekProgress.value = playerController.maxDuration;
+        _updatePlayerPercent();
+      });
+    });
   }
 
   @override
   void dispose() {
-    onCurrentDurationSubscription.cancel();
+    onCurrentDurationSubscription?.cancel();
     onCurrentExtractedWaveformData?.cancel();
-    onCompletionSubscription.cancel();
+    onCompletionSubscription?.cancel();
     playerController.removeListener(_addWaveformDataFromController);
     _growingWaveController.dispose();
     super.dispose();
